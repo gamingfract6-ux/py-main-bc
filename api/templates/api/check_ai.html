@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI Status - Find Your Food</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --error: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .icon-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 32px;
+            transition: all 0.3s ease;
+        }
+
+        .icon-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .status-loading { background: #e2e8f0; color: #64748b; }
+        .status-success { background: #dcfce7; color: #166534; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+        .status-warning { background: #fef3c7; color: #92400e; }
+
+        h1 { font-size: 24px; font-weight: 600; margin: 0 0 8px; }
+        p { color: var(--text-muted); margin-bottom: 32px; line-height: 1.5; }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-family: inherit;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:hover { background: var(--primary-dark); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .result-box {
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            display: none;
+            text-align: left;
+            word-break: break-all;
+        }
+
+        .result-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+        .result-error { background: #fff1f2; border: 1px solid #fecaca; color: #991b1b; }
+
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div id="statusIcon" class="icon-box status-loading">
+                <i class="fas fa-robot"></i>
+            </div>
+            <h1>Gemini AI Diagnostic</h1>
+            <p>Enter an API key to test the connection status.</p>
+
+            <div class="input-group">
+                <label for="apiKey">Gemini API Key</label>
+                <input type="text" id="apiKey" placeholder="AIzaSy..." value="">
+            </div>
+
+            <button id="testBtn" class="btn">
+                <span>Check Connection</span>
+                <i class="fas fa-chevron-right"></i>
+            </button>
+
+            <div id="resultBox" class="result-box"></div>
+        </div>
+    </div>
+
+    <script>
+        const testBtn = document.getElementById('testBtn');
+        const apiKeyInput = document.getElementById('apiKey');
+        const resultBox = document.getElementById('resultBox');
+        const statusIcon = document.getElementById('statusIcon');
+
+        testBtn.addEventListener('click', async () => {
+            const key = apiKeyInput.value.trim();
+            
+            // UI Reset
+            testBtn.disabled = true;
+            testBtn.innerHTML = '<span class="loader"></span> Loading...';
+            resultBox.style.display = 'none';
+            statusIcon.className = 'icon-box status-loading icon-pulse';
+            statusIcon.innerHTML = '<i class="fas fa-sync-alt"></i>';
+
+            try {
+                const response = await fetch('', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ api_key: key })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    statusIcon.className = 'icon-box status-success';
+                    statusIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                    resultBox.className = 'result-box result-success';
+                    resultBox.innerHTML = `<strong>Success!</strong><br>Gemini says: "${data.response}"`;
+                } else {
+                    statusIcon.className = 'icon-box status-error';
+                    statusIcon.innerHTML = '<i class="fas fa-times-circle"></i>';
+                    resultBox.className = 'result-box result-error';
+                    
+                    let errorMsg = data.error;
+                    if (data.status_code === 429) errorMsg = "Quota Exceeded (Limit reached)";
+                    if (data.status_code === 401) errorMsg = "Invalid API Key";
+                    
+                    resultBox.innerHTML = `<strong>Failed!</strong><br>${errorMsg}`;
+                }
+            } catch (err) {
+                statusIcon.className = 'icon-box status-error';
+                statusIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                resultBox.className = 'result-box result-error';
+                resultBox.innerHTML = `<strong>Error!</strong><br>Failed to reach backend server.`;
+            } finally {
+                testBtn.disabled = false;
+                testBtn.innerHTML = '<span>Check Connection</span> <i class="fas fa-chevron-right"></i>';
+                resultBox.style.display = 'block';
+            }
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
